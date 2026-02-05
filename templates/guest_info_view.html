@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Your Guest Information - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Your Guest Information</h2>
+    <p class="event-description">
+        <strong>Reservation ID:</strong> {{ rsvp.reservation_id }}<br>
+        <strong>Reservation Name:</strong> {{ rsvp.name }}<br>
+        <strong>Number of Guests:</strong> {{ rsvp.num_guests }}<br>
+        <strong>Payment Status:</strong> <span class="payment-badge payment-{{ rsvp.payment_status.replace('/', '-').replace(' ', '-') }}">
+            {{ rsvp.payment_status }}
+        </span>
+    </p>
+</div>
+
+<div class="form-container">
+    <!-- Guest 1 Info -->
+    <div class="guest-view-section">
+        <h4 class="guest-header">Guest 1</h4>
+        <dl class="guest-info-display">
+            <dt>Name:</dt>
+            <dd>{% if guest1.title_rank %}{{ guest1.title_rank }} {% endif %}{{ guest1.first_name }} {{ guest1.last_name }}</dd>
+            
+            {% if guest1.allergy_notes %}
+            <dt>Allergy Notes:</dt>
+            <dd>{{ guest1.allergy_notes }}</dd>
+            {% endif %}
+            
+            {% if guest1.fun_fact %}
+            <dt>Fun Fact:</dt>
+            <dd>{{ guest1.fun_fact }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    
+    <!-- Guest 2 Info (if exists) -->
+    {% if guest2 %}
+    <div class="guest-view-section">
+        <h4 class="guest-header">Guest 2</h4>
+        <dl class="guest-info-display">
+            <dt>Name:</dt>
+            <dd>{% if guest2.title_rank %}{{ guest2.title_rank }} {% endif %}{{ guest2.first_name }} {{ guest2.last_name }}</dd>
+            
+            {% if guest2.allergy_notes %}
+            <dt>Allergy Notes:</dt>
+            <dd>{{ guest2.allergy_notes }}</dd>
+            {% endif %}
+            
+            {% if guest2.fun_fact %}
+            <dt>Fun Fact:</dt>
+            <dd>{{ guest2.fun_fact }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+    {% endif %}
+    
+    <!-- Action Buttons -->
+    <div class="guest-view-actions">
+        <a href="{{ url_for('guest_info', action='edit') }}" class="btn btn-primary">Modify Guest Information</a>
+        
+        {% if rsvp.num_guests == 1 %}
+        <form method="POST" action="{{ url_for('add_guest') }}" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Add a Second Guest</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="payment-info" style="margin-top: 3rem;">
+    <h3 style="text-align: center;">Payment Information</h3>
+    <p class="cost-info" style="text-align: center;"><strong>Cost:</strong> $60 per guest (Total: ${{ rsvp.num_guests * 60 }})</p>
+    
+    {% if rsvp.payment_status in ['not paid', 'guests changed - not paid'] %}
+    <p style="text-align: center;">Pay via cash or check to MAJ Geoff Moores, or Venmo @EECSFund using the QR code below:</p>
+    <img src="{{ url_for('static', filename='media/EECSFund_Venmo_QR.png') }}" alt="Venmo QR Code" class="payment-qr">
+
+    <div class="payment-mark-buttons" style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
+        <form method="POST" action="{{ url_for('mark_payment') }}" style="display: inline;">
+            <input type="hidden" name="payment_method" value="cash">
+            <button type="submit" class="btn btn-primary">I Paid with Cash</button>
+        </form>
+        <form method="POST" action="{{ url_for('mark_payment') }}" style="display: inline;">
+            <input type="hidden" name="payment_method" value="Venmo">
+            <button type="submit" class="btn btn-primary">I Paid with Venmo</button>
+        </form>
+    </div>
+    {% elif rsvp.payment_status.startswith('pending') %}
+    <p style="color: #856404; font-weight: 600;">✓ Your payment has been marked as pending confirmation by MAJ Moores!</p>
+    <img src="{{ url_for('static', filename='media/special_QR_code.png') }}" alt="Venmo QR Code" class="payment-qr">
+    {% else %}
+    <p style="color: #155724; font-weight: 600;">✓ Your payment has been confirmed!</p>
+    {% endif %}
+</div>
+{% endblock %}

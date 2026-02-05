@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Save the Date - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>You're Invited!</h2>
+    <p class="event-description">
+        Join us for an elegant evening celebrating Electrical Engineering and Computer Science.<br>
+        <strong>Date:</strong> March 20, 2026<br>
+        More details to follow — please let us know if you're interested in attending!
+    </p>
+</div>
+
+<div class="form-container">
+    <h3>YES! Count me in for the Dining-Out</h3>
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.name.label }}
+            {{ form.name(class="form-control", placeholder="Enter your full name") }}
+            {% if form.name.errors %}
+                <div class="error-messages">
+                    {% for error in form.name.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.email.label }}
+            {{ form.email(class="form-control", placeholder="yourname@westpoint.edu") }}
+            <small class="form-hint">Must be a @westpoint.edu email address</small>
+            {% if form.email.errors %}
+                <div class="error-messages">
+                    {% for error in form.email.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.num_guests.label }}
+            {{ form.num_guests(class="form-control") }}
+            <small class="form-hint">Including yourself</small>
+            {% if form.num_guests.errors %}
+                <div class="error-messages">
+                    {% for error in form.num_guests.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
+{% endblock %}

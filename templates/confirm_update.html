@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Update RSVP - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <h2>Existing Reservation Found</h2>
+    
+    <p class="warning-text">
+        A reservation already exists for <strong>{{ pending.email }}</strong>.
+    </p>
+    
+    <div class="comparison">
+        <div class="rsvp-card existing">
+            <h4>Current Reservation</h4>
+            <dl>
+                <dt>Name:</dt>
+                <dd>{{ existing.name }}</dd>
+                <dt>Email:</dt>
+                <dd>{{ existing.email }}</dd>
+                <dt>Number of Guests:</dt>
+                <dd>{{ existing.num_guests }}</dd>
+            </dl>
+        </div>
+        
+        <div class="arrow">→</div>
+        
+        <div class="rsvp-card new">
+            <h4>New Information</h4>
+            <dl>
+                <dt>Name:</dt>
+                <dd>{{ pending.name }}</dd>
+                <dt>Email:</dt>
+                <dd>{{ pending.email }}</dd>
+                <dt>Number of Guests:</dt>
+                <dd>{{ pending.num_guests }}</dd>
+            </dl>
+        </div>
+    </div>
+    
+    <p class="question">Would you like to update your existing reservation with this new information?</p>
+    
+    <form method="POST" class="button-group">
+        {{ form.hidden_tag() }}
+        {{ form.update(class="btn btn-primary") }}
+        {{ form.cancel(class="btn btn-secondary") }}
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Remove Guest - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Remove Guest</h2>
+    <p class="event-description">
+        You've updated your reservation to have <strong>{{ rsvp.num_guests }}</strong> guest(s).<br>
+        Please select which guest to remove.
+    </p>
+</div>
+
+<div class="form-container">
+    <form method="POST" class="guest-selection-form">
+        <div class="guest-removal-list">
+            {% for guest in guests %}
+            <div class="guest-removal-item">
+                <label class="guest-radio-label">
+                    <input type="radio" name="guest_id" value="{{ guest.id }}" required>
+                    <span class="guest-info">
+                        {% if guest.title_rank %}{{ guest.title_rank }} {% endif %}
+                        <strong>{{ guest.first_name }} {{ guest.last_name }}</strong>
+                        <br>
+                        <small>Guest {{ guest.guest_number }}</small>
+                    </span>
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="margin-top: 1.5rem;">Remove Selected Guest</button>
+    </form>
+</div>
+{% endblock %}

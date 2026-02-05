@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome Back - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Welcome back, {{ rsvp.name }}!</h2>
+    <p class="event-description">
+        We already have your reservation on file for the EECS Dining-Out on <strong>March 20, 2026</strong>.
+    </p>
+    
+    <div class="rsvp-summary">
+        <h4>Your Current Reservation</h4>
+        <dl>
+            <dt>Reservation ID:</dt>
+            <dd><strong>{{ rsvp.reservation_id }}</strong></dd>
+            <dt>Name:</dt>
+            <dd>{{ rsvp.name }}</dd>
+            <dt>Email:</dt>
+            <dd>{{ rsvp.email }}</dd>
+            <dt>Total Guests:</dt>
+            <dd>{{ rsvp.num_guests }}</dd>
+        </dl>
+    </div>
+    
+    <p class="question">What would you like to do?</p>
+    
+    <div class="welcome-buttons">
+        <a href="{{ url_for('rsvp', action='modify') }}" class="btn btn-primary">Modify My Reservation</a>
+        <a href="{{ url_for('rsvp', action='delete') }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete your RSVP?');">Delete My Reservation</a>
+        <a href="{{ url_for('rsvp', action='new') }}" class="btn btn-secondary">I'm Someone Else</a>
+    </div>
+</div>
+{% endblock %}

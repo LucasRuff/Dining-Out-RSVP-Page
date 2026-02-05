@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Tracking - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info responses-container">
+    <h2>Payment Tracking</h2>
+    <p style="margin-bottom: 1.5rem;">Update payment status for each reservation</p>
+    
+    <div class="table-wrapper">
+        <table class="responses-table">
+            <thead>
+                <tr>
+                    <th>Reservation ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Guests</th>
+                    <th>Payment Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rsvp in rsvps %}
+                <tr>
+                    <td><strong>{{ rsvp.reservation_id }}</strong></td>
+                    <td>{{ rsvp.name }}</td>
+                    <td>{{ rsvp.email }}</td>
+                    <td>{{ rsvp.num_guests }}</td>
+                    <td>
+                        <span class="payment-badge payment-{{ rsvp.payment_status.replace('/', '-').replace(' ', '-') }}">
+                            {{ rsvp.payment_status }}
+                        </span>
+                    </td>
+                    <td style="display: flex; gap: 0.5rem; align-items: center;">
+                        {% if rsvp.payment_status in ['not paid', 'guests changed - not paid'] %}
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <input type="hidden" name="payment_status" value="cash">
+                            <button type="submit" class="quick-paid-btn" title="Confirm as Cash">Cash</button>
+                        </form>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <input type="hidden" name="payment_status" value="Venmo">
+                            <button type="submit" class="quick-paid-btn" title="Confirm as Venmo">Venmo</button>
+                        </form>
+                        {% elif rsvp.payment_status.startswith('pending') %}
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <input type="hidden" name="payment_status" value="cash">
+                            <button type="submit" class="quick-confirm-btn" title="Confirm Cash">Confirm Cash</button>
+                        </form>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <input type="hidden" name="payment_status" value="Venmo">
+                            <button type="submit" class="quick-confirm-btn" title="Confirm Venmo">Confirm Venmo</button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="rsvp_id" value="{{ rsvp.id }}">
+                            <select name="payment_status" class="payment-select" onchange="this.form.submit()">
+                                <option value="not paid" {% if rsvp.payment_status == 'not paid' %}selected{% endif %}>Not Paid</option>
+                                <option value="pending - cash" {% if rsvp.payment_status == 'pending - cash' %}selected{% endif %}>Pending - Cash</option>
+                                <option value="pending - Venmo" {% if rsvp.payment_status == 'pending - Venmo' %}selected{% endif %}>Pending - Venmo</option>
+                                <option value="cash" {% if rsvp.payment_status == 'cash' %}selected{% endif %}>Cash (Confirmed)</option>
+                                <option value="Venmo" {% if rsvp.payment_status == 'Venmo' %}selected{% endif %}>Venmo (Confirmed)</option>
+                                <option value="guests changed - not paid" {% if rsvp.payment_status == 'guests changed - not paid' %}selected{% endif %}>Guests Changed - Not Paid</option>
+                            </select>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align:center;">No responses yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('responses') }}" class="btn btn-secondary">View All Responses</a>
+    </div>
+</div>
+{% endblock %}

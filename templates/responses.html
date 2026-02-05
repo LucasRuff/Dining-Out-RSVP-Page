@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}RSVP Responses - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info responses-container">
+    <h2>All RSVP Responses</h2>
+    <div class="table-wrapper">
+        <table class="responses-table">
+            <thead>
+                <tr>
+                    <th>Reservation ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Guests</th>
+                    <th>Submitted</th>
+                    <th>Last Updated</th>
+                    <th>Guest Info</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rsvp in rsvps %}
+                <tr>
+                    <td><strong>{{ rsvp.reservation_id }}</strong></td>
+                    <td>{{ rsvp.name }}</td>
+                    <td>{{ rsvp.email }}</td>
+                    <td>{{ rsvp.num_guests }}</td>
+                    <td>{{ rsvp.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ rsvp.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><a href="{{ url_for('guest_info', rsvp_id=rsvp.id) }}" class="btn-link">View/Edit</a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align:center;">No responses yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

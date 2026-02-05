@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Look Up Reservation - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Guest Information</h2>
+    <p class="event-description">
+        To provide your guest information, please look up your reservation or create one if you haven't yet.
+    </p>
+</div>
+
+<div class="form-container">
+    <h3>Look Up Your Reservation</h3>
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        
+        <div class="form-group">
+            {{ form.lookup_value.label }}
+            {{ form.lookup_value(class="form-control", placeholder="Enter your Reservation ID or @westpoint.edu email") }}
+            {% if form.lookup_value.errors %}
+                <div class="error-messages">
+                    {% for error in form.lookup_value.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+    
+    <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #dee2e6;">
+        <p style="margin-bottom: 1rem;">Don't have a reservation yet?</p>
+        <a href="{{ url_for('rsvp') }}" class="btn btn-secondary">Create a Reservation</a>
+    </div>
+</div>
+{% endblock %}

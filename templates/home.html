@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}EECS Dining-Out Home{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Welcome to the EECS Dining-Out!</h2>
+    <p class="event-description">
+        This is the official home page for the EECS Dining-Out<br>
+        <strong>The Thayer Hotel</strong><br>
+        <strong>Buffet Dinner</strong><br>
+        <strong>March 20, 2026</strong><br>
+    </p>
+    {% if rsvp %}
+    <div style="margin-top:2rem;">
+        <p style="margin-bottom:1rem;">Welcome back, <strong>{{ rsvp.name }}</strong>!</p>
+        <a href="{{ url_for('guest_info') }}" class="btn btn-primary">Provide Guest Information</a>
+        <a href="{{ url_for('rsvp', action='new') }}" class="btn btn-secondary" style="margin-top:0.5rem;">New Reservation</a>
+    </div>
+    {% else %}
+    <div style="margin-top:2rem;">
+        <a href="{{ url_for('rsvp') }}" class="btn btn-primary">RSVP Now</a>
+        <a href="{{ url_for('guest_info') }}" class="btn btn-secondary" style="margin-top:0.5rem;">I Already Have a Reservation</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="payment-info" style="margin-top: 3rem;">
+    <h3 style="text-align: center;">Payment Information</h3>
+    <p class="cost-info" style="text-align: center;"><strong>Cost:</strong> $60 per guest</p>
+    <p style="text-align:center">Pay via cash or check to MAJ Geoff Moores, or Venmo @EECSFund using the QR code below:</p>
+    <img src="{{ url_for('static', filename='media/EECSFund_Venmo_QR.png') }}" alt="Venmo QR Code" class="payment-qr">
+</div>
+{% endblock %}

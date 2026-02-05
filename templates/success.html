@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Thank You - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="success-container">
+    <div class="success-icon">✓</div>
+    <h2>Thank You!</h2>
+    {% if reservation_id %}
+    <div class="reservation-id-box">
+        <p>Your Reservation ID:</p>
+        <span class="reservation-id">{{ reservation_id }}</span>
+    </div>
+    {% endif %}
+    <p>Your response has been recorded. We'll be in touch with more details soon.</p>
+    
+    <div class="payment-info">
+        <h3 style="text-align: center;">Payment Information</h3>
+        <p class="cost-info" style="text-align: center;"><strong>Cost:</strong> $60 per guest</p>
+        <p style="text-align: center;">Pay via cash or check to MAJ Geoff Moores, or Venmo @EECSFund using the QR code below:</p>
+        <img src="{{ url_for('static', filename='media/EECSFund_Venmo_QR.png') }}" alt="Venmo QR Code" class="payment-qr">
+    </div>
+    
+    <a href="{{ url_for('home') }}" class="btn btn-secondary">Return to Home</a>
+</div>
+{% endblock %}

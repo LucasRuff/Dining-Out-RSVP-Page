@@ -1,0 +1,14 @@
+services:
+  web:
+    image: lucasruff/rsvp_system:latest  # Pull from Docker Hub
+    # Or use: build: .  # Build locally
+    ports:
+      - "8080:8080"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+    volumes:
+      - rsvp_data:/app/instance
+    restart: unless-stopped
+
+volumes:
+  rsvp_data:

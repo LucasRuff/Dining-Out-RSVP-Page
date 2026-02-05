@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EECS Dining-Out{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container {% if request.endpoint in ['responses', 'payment_tracking'] %}container-wide{% endif %}">
+        <header>
+            <h1>EECS Dining-Out</h1>
+            
+            <div class="header-nav-buttons">
+                {% if request.endpoint != 'home' %}
+                <a href="{{ url_for('home') }}" class="header-nav-btn">Home</a>
+                {% endif %}
+                {% if request.endpoint != 'menu' %}
+                <a href="{{ url_for('menu') }}" class="header-nav-btn">Dinner Menu</a>
+                {% endif %}
+                {% if current_rsvp %}
+                    {% if request.endpoint != 'home' %}
+                    <a href="{{ url_for('guest_info') }}" class="header-nav-btn">Guest Info</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </header>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 EECS</p>
+        </footer>
+    </div>
+</body>
+</html>
