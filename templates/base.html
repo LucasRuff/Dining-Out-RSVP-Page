@@ -12,22 +12,24 @@
             <h1>EECS Dining-Out</h1>
             
             <div class="header-nav-buttons">
-                {% if request.endpoint != 'home' %}
+                
                 <a href="{{ url_for('home') }}" class="header-nav-btn">Home</a>
-                {% endif %}
-                {% if request.endpoint != 'menu' %}
+                
                 <a href="{{ url_for('menu') }}" class="header-nav-btn">Dinner Menu</a>
-                {% endif %}
-                {% if request.endpoint != 'guest_list' %}
+                
                 <a href="{{ url_for('guest_list') }}" class="header-nav-btn">Guest List</a>
-                {% endif %}
-                {% if current_rsvp %}
-                    {% if request.endpoint != 'home' %}
-                    <a href="{{ url_for('guest_info') }}" class="header-nav-btn">Guest Info</a>
-                    {% endif %}
-                {% endif %}
+                
+                <a href="{{ url_for('guest_info') }}" class="header-nav-btn">My Guest Info</a>
+                
             </div>
         </header>
+        
+        <!-- Countdown Timer -->
+        <div id="countdown-timer" style="background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1)); border: 2px solid #d4af37; border-radius: 4px; padding: 1rem; margin: 1rem 0; text-align: center; display: none;">
+            <p style="color: #e8e8e8; margin: 0; font-size: 1.1rem;">
+                <strong><span id="countdown-label">RSVP Cutoff:</span></strong> <span id="countdown-display" style="color: #d4af37; font-weight: 600; font-size: 1.2rem;">Loading...</span>
+            </p>
+        </div>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -47,5 +49,55 @@
             <p>&copy; 2026 EECS</p>
         </footer>
     </div>
+
+    <script>
+        function updateCountdown() {
+            // RSVP cutoff: midnight March 3, 2026 (00:00 EST)
+            const cutoffDate = Date.UTC(2026, 2, 3, 5, 0, 0); // 00:00 EST = 05:00 UTC
+            // Event start: March 20, 2026 at 6:00 PM EST
+            const eventDate = Date.UTC(2026, 2, 20, 23, 0, 0); // 18:00 EST = 23:00 UTC
+            const now = new Date().getTime();
+            
+            const timerElement = document.getElementById('countdown-timer');
+            const displayElement = document.getElementById('countdown-display');
+            const labelElement = document.getElementById('countdown-label');
+            
+            let targetDate = cutoffDate;
+            let labelText = 'RSVP Cutoff:';
+            
+            if (now >= cutoffDate && now < eventDate) {
+                targetDate = eventDate;
+                labelText = 'Event Starts:';
+            } else if (now >= eventDate) {
+                timerElement.style.display = 'none';
+                return;
+            }
+            
+            const distance = targetDate - now;
+            
+            // Show the timer
+            timerElement.style.display = 'block';
+            labelElement.textContent = labelText;
+            
+            // Calculate days, hours, minutes, seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            
+            // Format the display
+            let timeString = '';
+            if (days > 0) {
+                timeString += `${days}d `;
+            }
+            timeString += `${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
+            
+            displayElement.textContent = timeString;
+        }
+        
+        // Update countdown immediately and then every second
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
 </body>
 </html>

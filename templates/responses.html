@@ -4,7 +4,19 @@
 
 {% block content %}
 <div class="event-info responses-container">
-    <h2>All RSVP Responses</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h2>All RSVP Responses</h2>
+            <p style="color: #999; margin-top: 0.5rem; font-size: 1.1rem;">
+                <strong>Total Guests:</strong> <span style="color: #d4af37; font-size: 1.3rem;">{{ total_guests }}</span>
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('export_guests') }}" class="btn btn-secondary" style="display: inline-block;">
+                ↓ Export as CSV
+            </a>
+        </div>
+    </div>
     <div class="table-wrapper">
         <table class="responses-table">
             <thead>
@@ -16,6 +28,7 @@
                     <th>Submitted</th>
                     <th>Last Updated</th>
                     <th>Guest Info</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,10 +41,17 @@
                     <td>{{ rsvp.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>{{ rsvp.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td><a href="{{ url_for('guest_info', rsvp_id=rsvp.id) }}" class="btn-link">View/Edit</a></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('cancel_reservation_admin', rsvp_id=rsvp.id) }}" style="display: inline;">
+                            <button type="submit" class="btn btn-secondary" onclick="return confirm('Cancel this reservation? This cannot be undone.');">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" style="text-align:center;">No responses yet.</td>
+                    <td colspan="8" style="text-align:center;">No responses yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>

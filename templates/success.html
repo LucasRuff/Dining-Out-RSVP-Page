@@ -27,4 +27,59 @@
     
     <a href="{{ url_for('home') }}" class="btn btn-secondary">Return to Home</a>
 </div>
+
+{% if first_visit %}
+<!-- Modal Popover for First-Time Visitors -->
+<div id="guest-info-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+    <div style="background: #1a1a1a; border: 2px solid #d4af37; border-radius: 8px; padding: 2rem; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);">
+        <h3 style="color: #d4af37; margin-bottom: 1rem; font-size: 1.5rem;">Next Step: Guest Information</h3>
+        <p style="color: #e8e8e8; margin-bottom: 2rem; line-height: 1.6;">
+            Please provide the names of your guest(s) and any dietary restrictions so we can ensure a great experience for everyone.
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <a href="{{ url_for('guest_info') }}" class="btn btn-primary" style="flex: 1; text-decoration: none;">
+                Enter Guest Info
+            </a>
+            <button onclick="closeGuestInfoModal()" class="btn btn-secondary" style="flex: 1;">
+                I'll do this later
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    #guest-info-modal {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+</style>
+
+<script>
+    function closeGuestInfoModal() {
+        const modal = document.getElementById('guest-info-modal');
+        modal.style.animation = 'fadeOut 0.3s ease-out forwards';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+</script>
+{% endif %}
+
 {% endblock %}

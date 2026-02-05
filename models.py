@@ -40,6 +40,13 @@ class RSVP(db.Model):
     
     # Relationship to guests
     guests = db.relationship('Guest', backref='rsvp', lazy=True, cascade='all, delete-orphan')
+    # Relationship to seating preference (one-to-one)
+    seating_preference = db.relationship(
+        'SeatingPreference',
+        back_populates='rsvp',
+        uselist=False,
+        cascade='all, delete-orphan'
+    )
     
     def __repr__(self):
         return f'<RSVP {self.reservation_id}: {self.name} ({self.email})>'
@@ -99,14 +106,14 @@ class SeatingPreference(db.Model):
     __tablename__ = 'seating_preferences'
     
     id = db.Column(db.Integer, primary_key=True)
-    rsvp_id = db.Column(db.Integer, db.ForeignKey('rsvps.id'), nullable=False, unique=True)
+    rsvp_id = db.Column(db.Integer, db.ForeignKey('rsvps.id', ondelete='CASCADE'), nullable=False, unique=True)
     # Comma-separated list of RSVP IDs in order of preference
     ranked_rsvp_ids = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationship to RSVP
-    rsvp = db.relationship('RSVP', backref='seating_preference')
+    rsvp = db.relationship('RSVP', back_populates='seating_preference')
     
     def __repr__(self):
         return f'<SeatingPreference RSVP {self.rsvp_id}: {self.ranked_rsvp_ids}>'

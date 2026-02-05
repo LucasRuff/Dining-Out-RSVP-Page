@@ -1,9 +1,12 @@
 
-from flask import Flask, render_template, redirect, url_for, flash, session, request, make_response
+from flask import Flask, render_template, redirect, url_for, flash, session, request, make_response, send_file
 from models import db, RSVP, Guest, SeatingPreference, generate_reservation_id
 from forms import RSVPForm, UpdateConfirmForm, PaymentStatusForm, GuestInfoForm, ReservationLookupForm, SeatingPreferenceForm
 import os
 import secrets
+import csv
+import io
+from datetime import datetime
 from sqlalchemy import text
 from functools import wraps
 
@@ -160,7 +163,7 @@ def rsvp():
         set_rsvp_cookie(response, new_rsvp)
         return response
     
-    return render_template('index.html', form=form, action=action)
+    return render_template('rsvp_form.html', form=form, action=action)
 
 
 @app.route('/confirm-update', methods=['GET', 'POST'])
@@ -258,12 +261,15 @@ def remove_guest():
 def success():
     """Success page after RSVP submission."""
     reservation_id = session.pop('show_reservation_id', None)
+    first_visit = reservation_id is not None  # First visit if we just submitted RSVP
+    
     if not reservation_id:
         # Try to get from cookie
         rsvp = get_rsvp_from_cookie()
         if rsvp:
             reservation_id = rsvp.reservation_id
-    return render_template('success.html', reservation_id=reservation_id)
+    
+    return render_template('success.html', reservation_id=reservation_id, first_visit=first_visit)
 
 
 @app.route('/admin-login', methods=['GET', 'POST'])
@@ -288,7 +294,115 @@ def admin_login():
 def responses():
     """View all current RSVP responses."""
     rsvps = RSVP.query.order_by(RSVP.created_at.desc()).all()
-    return render_template('responses.html', rsvps=rsvps)
+    total_guests = sum(rsvp.num_guests for rsvp in rsvps)
+    return render_template('responses.html', rsvps=rsvps, total_guests=total_guests)
+
+
+@app.route('/export-guests')
+@require_admin
+def export_guests():
+    """Export all guest information as CSV."""
+    rsvps = RSVP.query.order_by(RSVP.created_at.desc()).all()
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'Reservation ID', 'RSVP Name', 'Email', 'Num Guests', 
+        'Guest Number', 'First Name', 'Last Name', 'Allergy Notes', 'Fun Fact',
+        'Payment Status', 'Submitted', 'Last Updated'
+    ])
+    
+    # Write data
+    for rsvp in rsvps:
+        if rsvp.guests:
+            for guest in rsvp.guests:
+                writer.writerow([
+                    rsvp.reservation_id,
+                    rsvp.name,
+                    rsvp.email,
+                    rsvp.num_guests,
+                    guest.guest_number,
+                    guest.first_name,
+                    guest.last_name,
+                    guest.allergy_notes or '',
+                    guest.fun_fact or '',
+                    rsvp.payment_status,
+                    rsvp.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    rsvp.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                ])
+        else:
+            # Write RSVP with no guests
+            writer.writerow([
+                rsvp.reservation_id,
+                rsvp.name,
+                rsvp.email,
+                rsvp.num_guests,
+                '', '', '', '', '',
+                rsvp.payment_status,
+                rsvp.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                rsvp.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+            ])
+    
+    # Create file-like object
+    output.seek(0)
+    
+    # Return as download
+    return send_file(
+        io.BytesIO(output.getvalue().encode()),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'guest_list_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
+
+
+def remove_rsvp_from_rankings(target_rsvp_id):
+    """Remove a deleted RSVP from all seating preference rankings."""
+    preferences = SeatingPreference.query.all()
+    for preference in preferences:
+        ranked_ids = preference.get_ranked_list()
+        if target_rsvp_id in ranked_ids:
+            updated_ids = [rsvp_id for rsvp_id in ranked_ids if rsvp_id != target_rsvp_id]
+            preference.set_ranked_list(updated_ids)
+
+
+@app.route('/cancel-reservation', methods=['POST'])
+def cancel_reservation():
+    """Cancel the current user's reservation."""
+    rsvp = get_rsvp_from_cookie()
+    if not rsvp and 'guest_info_rsvp_id' in session:
+        rsvp = RSVP.query.get(session['guest_info_rsvp_id'])
+
+    if not rsvp:
+        flash('Unable to locate your reservation.', 'error')
+        return redirect(url_for('home'))
+
+    remove_rsvp_from_rankings(rsvp.id)
+    db.session.delete(rsvp)
+    db.session.commit()
+    flash('Your reservation has been cancelled.', 'info')
+    session.pop('guest_info_rsvp_id', None)
+    response = make_response(redirect(url_for('home')))
+    delete_rsvp_cookie(response)
+    return response
+
+
+@app.route('/cancel-reservation/<int:rsvp_id>', methods=['POST'])
+@require_admin
+def cancel_reservation_admin(rsvp_id):
+    """Admin: cancel a reservation by ID."""
+    rsvp = RSVP.query.get(rsvp_id)
+    if not rsvp:
+        flash('Reservation not found.', 'error')
+        return redirect(url_for('responses'))
+
+    remove_rsvp_from_rankings(rsvp.id)
+    db.session.delete(rsvp)
+    db.session.commit()
+    flash('Reservation cancelled.', 'info')
+    return redirect(url_for('responses'))
 
 
 @app.route('/mark-payment', methods=['POST'])

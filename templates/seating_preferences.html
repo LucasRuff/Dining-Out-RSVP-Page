@@ -3,10 +3,13 @@
 {% block title %}Seating Preferences - EECS Dining-Out{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
 <div class="event-info">
     <h2>Seating Preferences</h2>
     <p class="event-description">
-        Select the reservations you'd like to sit near, in order of preference. You can rank some, all, or none.
+        Select the reservations you'd like to sit near, in order of preference. You can rank some, all, or none. (Click and drag on desktop, or tap and drag on mobile)
     </p>
 </div>
 
@@ -24,7 +27,7 @@
             <p style="color: #999; font-size: 0.9rem; margin-bottom: 1rem;">Drag preferences here to rank them:</p>
             <div id="ranked-area" style="display: flex; flex-direction: column; gap: 0.5rem; min-height: 40px;">
                 {% for info in ranked_rsvps_info %}
-                <div class="preference-item" draggable="true" data-rsvp-id="{{ info.rsvp.id }}" style="padding: 1rem; background: rgba(26, 26, 26, 0.8); border: 1px solid #4a4a4a; border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+                <div class="preference-item" data-rsvp-id="{{ info.rsvp.id }}" style="padding: 1rem; background: rgba(26, 26, 26, 0.8); border: 1px solid #4a4a4a; border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: space-between; user-select: none; touch-action: none;">
                     <div style="flex: 1;">
                         <span class="rank-display" style="color:#d4af37; font-weight: 600; font-size: 0.9rem; margin-right: 0.5rem;">#{{ info.rank }}</span><strong style="color:#e8e8e8">{{ info.display_name }}</strong>
                     </div>
@@ -37,7 +40,7 @@
         <h3>Unranked Reservations</h3>
         <div id="unranked-list" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 80px; padding: 0.5rem; border: 1px dashed #4a4a4a; border-radius: 4px; background: rgba(13, 13, 13, 0.5);">
             {% for info in unranked_rsvps_info %}
-            <div class="preference-item" draggable="true" data-rsvp-id="{{ info.rsvp.id }}" style="padding: 1rem; background: rgba(26, 26, 26, 0.8); border: 1px solid #4a4a4a; border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+            <div class="preference-item" data-rsvp-id="{{ info.rsvp.id }}" style="padding: 1rem; background: rgba(26, 26, 26, 0.8); border: 1px solid #4a4a4a; border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: space-between; user-select: none; touch-action: none;">
                 <div style="flex: 1;">
                     <span class="rank-display" style="display: none; color:#d4af37; font-weight: 600; font-size: 0.9rem; margin-right: 0.5rem;"></span><strong style="color:#e8e8e8">{{ info.display_name }}</strong>
                 </div>
@@ -59,101 +62,6 @@
 <script>
     const rankedArea = document.getElementById('ranked-area');
     const unrankedList = document.getElementById('unranked-list');
-    const items = document.querySelectorAll('.preference-item');
-    
-    let draggedItem = null;
-    
-    function setupDragListeners(item) {
-        item.addEventListener('dragstart', (e) => {
-            draggedItem = item;
-            item.style.opacity = '0.5';
-            e.dataTransfer.effectAllowed = 'move';
-        });
-        
-        item.addEventListener('dragend', (e) => {
-            draggedItem = null;
-            item.style.opacity = '1';
-            document.querySelectorAll('.preference-item').forEach(i => {
-                i.style.borderColor = '#4a4a4a';
-            });
-            rankedArea.style.borderColor = '#d4af37';
-            unrankedList.style.borderColor = 'transparent';
-            updateFormInputs();
-        });
-    }
-    
-    // Handle reordering within ranked area
-    rankedArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        if (draggedItem && draggedItem.parentNode === rankedArea) {
-            const afterElement = getDragAfterElement(rankedArea, e.clientY);
-            if (afterElement == null) {
-                rankedArea.appendChild(draggedItem);
-            } else {
-                rankedArea.insertBefore(draggedItem, afterElement);
-            }
-        } else if (draggedItem && draggedItem.parentNode === unrankedList) {
-            rankedArea.style.borderColor = '#d4af37';
-            unrankedList.style.borderColor = 'transparent';
-        }
-    });
-    
-    rankedArea.addEventListener('dragleave', (e) => {
-        if (e.target === rankedArea) {
-            rankedArea.style.borderColor = '#d4af37';
-            unrankedList.style.borderColor = 'transparent';
-        }
-    });
-    
-    rankedArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        rankedArea.style.borderColor = '#d4af37';
-        if (draggedItem && draggedItem.parentNode === unrankedList) {
-            rankedArea.appendChild(draggedItem);
-        }
-    });
-    
-    unrankedList.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        if (draggedItem && draggedItem.parentNode === rankedArea) {
-            unrankedList.style.borderColor = '#d4af37';
-            rankedArea.style.borderColor = 'transparent';
-        }
-    });
-    
-    unrankedList.addEventListener('dragleave', (e) => {
-        if (e.target === unrankedList) {
-            unrankedList.style.borderColor = 'transparent';
-            rankedArea.style.borderColor = '#d4af37';
-        }
-    });
-    
-    unrankedList.addEventListener('drop', (e) => {
-        e.preventDefault();
-        unrankedList.style.borderColor = 'transparent';
-        if (draggedItem && draggedItem.parentNode === rankedArea) {
-            unrankedList.appendChild(draggedItem);
-        }
-    });
-    
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.preference-item:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-    
-    items.forEach(item => {
-        setupDragListeners(item);
-    });
     
     function updateFormInputs() {
         const rankedItems = rankedArea.querySelectorAll('.preference-item');
@@ -175,5 +83,54 @@
             rankDisplay.style.display = 'none';
         });
     }
+    
+    // Initialize Sortable for ranked area
+    Sortable.create(rankedArea, {
+        group: { name: 'preferences', pull: true, put: true },
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: updateFormInputs,
+        touchStartThreshold: 0,
+        handle: '.preference-item'
+    });
+    
+    // Initialize Sortable for unranked list
+    Sortable.create(unrankedList, {
+        group: { name: 'preferences', pull: true, put: true },
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: updateFormInputs,
+        touchStartThreshold: 0,
+        handle: '.preference-item'
+    });
+    
+    // Add visual feedback for drag state
+    const items = document.querySelectorAll('.preference-item');
+    items.forEach(item => {
+        item.addEventListener('touchstart', (e) => {
+            item.style.opacity = '0.7';
+        });
+        item.addEventListener('touchend', (e) => {
+            item.style.opacity = '1';
+        });
+    });
 </script>
+
+<style>
+    .sortable-ghost {
+        opacity: 0.4;
+        background: rgba(212, 175, 55, 0.2);
+        border: 2px dashed #d4af37;
+    }
+    
+    .preference-item {
+        transition: background-color 0.2s ease;
+    }
+    
+    .preference-item:active {
+        background: rgba(26, 26, 26, 1) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    }
+</style>
+
 {% endblock %}
