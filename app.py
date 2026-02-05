@@ -391,13 +391,21 @@ def guest_info():
     # Show the form for editing or initial entry
     form = GuestInfoForm()
     
-    if request.method == 'GET' and guests:
+    if request.method == 'GET':
         if guest1:
             form.g1_first_name.data = guest1.first_name
             form.g1_last_name.data = guest1.last_name
             form.g1_title_rank.data = guest1.title_rank
             form.g1_allergy_notes.data = guest1.allergy_notes
             form.g1_fun_fact.data = guest1.fun_fact
+        else:
+            # Auto-populate guest 1 from RSVP name as best guess
+            parts = rsvp.name.strip().split()
+            if len(parts) >= 2:
+                form.g1_first_name.data = parts[0]
+                form.g1_last_name.data = parts[-1]
+            elif len(parts) == 1:
+                form.g1_first_name.data = parts[0]
         
         if guest2:
             form.g2_first_name.data = guest2.first_name
@@ -445,6 +453,44 @@ def guest_list():
     """View all guests across all reservations."""
     guests = Guest.query.order_by(Guest.rsvp_id, Guest.guest_number).all()
     return render_template('guest_list.html', guests=guests)
+
+
+@app.route('/remove-guest-2', methods=['POST'])
+def remove_guest_2():
+    """Remove guest 2 and reduce reservation to 1 guest."""
+    return remove_guest_by_number(2)
+
+
+@app.route('/remove-guest/<int:guest_number>', methods=['POST'])
+def remove_guest_by_number(guest_number):
+    """Remove a guest and keep numbering consistent."""
+    rsvp = get_rsvp_from_cookie()
+
+    if not rsvp:
+        flash('Reservation not found.', 'error')
+        return redirect(url_for('guest_info'))
+
+    if guest_number not in [1, 2]:
+        flash('Invalid guest selection.', 'error')
+        return redirect(url_for('guest_info'))
+
+    # Remove selected guest
+    guest = Guest.query.filter_by(rsvp_id=rsvp.id, guest_number=guest_number).first()
+    if guest:
+        db.session.delete(guest)
+
+    # If guest 1 was removed and guest 2 exists, renumber guest 2 to guest 1
+    if guest_number == 1:
+        guest2 = Guest.query.filter_by(rsvp_id=rsvp.id, guest_number=2).first()
+        if guest2:
+            guest2.guest_number = 1
+
+    # Reduce num_guests to 1
+    rsvp.num_guests = 1
+    db.session.commit()
+
+    flash(f'Guest {guest_number} removed. Reservation is now for 1 guest.', 'success')
+    return redirect(url_for('guest_info'))
 
 
 @app.route('/add-guest', methods=['POST'])

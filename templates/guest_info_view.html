@@ -65,6 +65,12 @@
             <button type="submit" class="btn btn-secondary">Add a Second Guest</button>
         </form>
         {% endif %}
+
+        {% if rsvp.num_guests == 2 and (not guest2 or (not guest2.first_name and not guest2.last_name)) %}
+        <form method="POST" action="{{ url_for('remove_guest_2') }}" style="display: inline;">
+            <button type="submit" class="btn btn-secondary">Remove Guest 2</button>
+        </form>
+        {% endif %}
         
         <a href="{{ url_for('seating_preferences') }}" class="btn btn-secondary">Set Seating Preferences</a>
     </div>

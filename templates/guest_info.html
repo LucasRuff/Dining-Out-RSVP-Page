@@ -23,6 +23,11 @@
         <!-- Guest 1 Section -->
         <div class="guest-section">
             <h4 class="guest-header">Guest 1</h4>
+            {% if rsvp.num_guests == 2 %}
+            <div style="margin: 0.5rem 0 1rem 0;">
+                <button type="submit" formmethod="POST" formaction="{{ url_for('remove_guest_by_number', guest_number=1) }}" class="btn btn-secondary">Remove Guest 1</button>
+            </div>
+            {% endif %}
             
             <div class="form-row">
                 <div class="form-group half-width">
@@ -72,6 +77,9 @@
         {% if rsvp.num_guests == 2 %}
         <div class="guest-section">
             <h4 class="guest-header">Guest 2</h4>
+            <div style="margin: 0.5rem 0 1rem 0;">
+                <button type="submit" formmethod="POST" formaction="{{ url_for('remove_guest_by_number', guest_number=2) }}" class="btn btn-secondary">Remove Guest 2</button>
+            </div>
             
             <div class="form-row">
                 <div class="form-group half-width">
