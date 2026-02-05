@@ -91,3 +91,32 @@ class Guest(db.Model):
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
+
+
+class SeatingPreference(db.Model):
+    """Seating preference model for storing guest seating preferences by reservation."""
+    
+    __tablename__ = 'seating_preferences'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    rsvp_id = db.Column(db.Integer, db.ForeignKey('rsvps.id'), nullable=False, unique=True)
+    # Comma-separated list of RSVP IDs in order of preference
+    ranked_rsvp_ids = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship to RSVP
+    rsvp = db.relationship('RSVP', backref='seating_preference')
+    
+    def __repr__(self):
+        return f'<SeatingPreference RSVP {self.rsvp_id}: {self.ranked_rsvp_ids}>'
+    
+    def get_ranked_list(self):
+        """Return list of ranked RSVP IDs as integers."""
+        if not self.ranked_rsvp_ids:
+            return []
+        return [int(id_str.strip()) for id_str in self.ranked_rsvp_ids.split(',') if id_str.strip()]
+    
+    def set_ranked_list(self, rsvp_id_list):
+        """Set ranked RSVP IDs from a list."""
+        self.ranked_rsvp_ids = ','.join(str(id_val) for id_val in rsvp_id_list) if rsvp_id_list else None

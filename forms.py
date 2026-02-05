@@ -81,3 +81,9 @@ class ReservationLookupForm(FlaskForm):
                                validators=[DataRequired(message='Please enter your reservation ID or email address.')])
     
     submit = SubmitField('Look Up Reservation')
+
+
+class SeatingPreferenceForm(FlaskForm):
+    """Form for setting seating preferences by reservation."""
+    
+    submit = SubmitField('Save Preferences')

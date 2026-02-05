@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block title %}Seating Preferences - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Seating Preferences</h2>
+    <p class="event-description">
+        Select the reservations you'd like to sit near, in order of preference. You can rank some, all, or none.
+    </p>
+</div>
+
+<div class="form-container">
+    <h3>Your Reservation</h3>
+    <p style="margin-bottom: 2rem; color:#e8e8e8">
+        <strong>{{ rsvp.name }}</strong> ({{ rsvp.num_guests }} guest{% if rsvp.num_guests != 1 %}s{% endif %})
+    </p>
+
+    <h3>Preferred Seating (in order)</h3>
+    <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        
+        <div id="ranked-list" style="margin-bottom: 2rem; padding: 1rem; background: rgba(212, 175, 55, 0.1); border: 2px solid #d4af37; border-radius: 4px; min-height: 60px;">
+            <p style="color: #999; font-size: 0.9rem; margin-bottom: 1rem;">Drag preferences here to rank them:</p>
+            <div id="ranked-area" style="display: flex; flex-direction: column; gap: 0.5rem; min-height: 40px;">
+                {% for info in ranked_rsvps_info %}
+                <div class="preference-item" draggable="true" data-rsvp-id="{{ info.rsvp.id }}" style="padding: 1rem; background: rgba(26, 26, 26, 0.8); border: 1px solid #4a4a4a; border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+                    <div style="flex: 1;">
+                        <span class="rank-display" style="color:#d4af37; font-weight: 600; font-size: 0.9rem; margin-right: 0.5rem;">#{{ info.rank }}</span><strong style="color:#e8e8e8">{{ info.display_name }}</strong>
+                    </div>
+                    <input type="hidden" class="rsvp-id" name="rank_0" value="{{ info.rsvp.id }}">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <h3>Unranked Reservations</h3>
+        <div id="unranked-list" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 80px; padding: 0.5rem; border: 1px dashed #4a4a4a; border-radius: 4px; background: rgba(13, 13, 13, 0.5);">
+            {% for info in unranked_rsvps_info %}
+            <div class="preference-item" draggable="true" data-rsvp-id="{{ info.rsvp.id }}" style="padding: 1rem; background: rgba(26, 26, 26, 0.8); border: 1px solid #4a4a4a; border-radius: 4px; cursor: grab; display: flex; align-items: center; justify-content: space-between; user-select: none;">
+                <div style="flex: 1;">
+                    <span class="rank-display" style="display: none; color:#d4af37; font-weight: 600; font-size: 0.9rem; margin-right: 0.5rem;"></span><strong style="color:#e8e8e8">{{ info.display_name }}</strong>
+                </div>
+                <input type="hidden" class="rsvp-id" name="rank_0" value="">
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-group" style="margin-top: 2rem;">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('guest_info') }}" class="btn btn-secondary">Back to Guest Info</a>
+    </div>
+</div>
+
+<script>
+    const rankedArea = document.getElementById('ranked-area');
+    const unrankedList = document.getElementById('unranked-list');
+    const items = document.querySelectorAll('.preference-item');
+    
+    let draggedItem = null;
+    
+    function setupDragListeners(item) {
+        item.addEventListener('dragstart', (e) => {
+            draggedItem = item;
+            item.style.opacity = '0.5';
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        item.addEventListener('dragend', (e) => {
+            draggedItem = null;
+            item.style.opacity = '1';
+            document.querySelectorAll('.preference-item').forEach(i => {
+                i.style.borderColor = '#4a4a4a';
+            });
+            rankedArea.style.borderColor = '#d4af37';
+            unrankedList.style.borderColor = 'transparent';
+            updateFormInputs();
+        });
+    }
+    
+    // Handle reordering within ranked area
+    rankedArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (draggedItem && draggedItem.parentNode === rankedArea) {
+            const afterElement = getDragAfterElement(rankedArea, e.clientY);
+            if (afterElement == null) {
+                rankedArea.appendChild(draggedItem);
+            } else {
+                rankedArea.insertBefore(draggedItem, afterElement);
+            }
+        } else if (draggedItem && draggedItem.parentNode === unrankedList) {
+            rankedArea.style.borderColor = '#d4af37';
+            unrankedList.style.borderColor = 'transparent';
+        }
+    });
+    
+    rankedArea.addEventListener('dragleave', (e) => {
+        if (e.target === rankedArea) {
+            rankedArea.style.borderColor = '#d4af37';
+            unrankedList.style.borderColor = 'transparent';
+        }
+    });
+    
+    rankedArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        rankedArea.style.borderColor = '#d4af37';
+        if (draggedItem && draggedItem.parentNode === unrankedList) {
+            rankedArea.appendChild(draggedItem);
+        }
+    });
+    
+    unrankedList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (draggedItem && draggedItem.parentNode === rankedArea) {
+            unrankedList.style.borderColor = '#d4af37';
+            rankedArea.style.borderColor = 'transparent';
+        }
+    });
+    
+    unrankedList.addEventListener('dragleave', (e) => {
+        if (e.target === unrankedList) {
+            unrankedList.style.borderColor = 'transparent';
+            rankedArea.style.borderColor = '#d4af37';
+        }
+    });
+    
+    unrankedList.addEventListener('drop', (e) => {
+        e.preventDefault();
+        unrankedList.style.borderColor = 'transparent';
+        if (draggedItem && draggedItem.parentNode === rankedArea) {
+            unrankedList.appendChild(draggedItem);
+        }
+    });
+    
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.preference-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    
+    items.forEach(item => {
+        setupDragListeners(item);
+    });
+    
+    function updateFormInputs() {
+        const rankedItems = rankedArea.querySelectorAll('.preference-item');
+        rankedItems.forEach((item, index) => {
+            const input = item.querySelector('.rsvp-id');
+            const rankDisplay = item.querySelector('.rank-display');
+            input.name = `rank_${index}`;
+            input.value = item.dataset.rsvpId;
+            rankDisplay.textContent = `#${index + 1}`;
+            rankDisplay.style.display = 'inline';
+        });
+        
+        const unrankedItems = unrankedList.querySelectorAll('.preference-item');
+        unrankedItems.forEach((item, index) => {
+            const input = item.querySelector('.rsvp-id');
+            const rankDisplay = item.querySelector('.rank-display');
+            input.name = `rank_${rankedItems.length + index}`;
+            input.value = '';
+            rankDisplay.style.display = 'none';
+        });
+    }
+</script>
+{% endblock %}

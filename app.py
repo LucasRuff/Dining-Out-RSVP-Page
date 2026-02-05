@@ -1,7 +1,7 @@
 
 from flask import Flask, render_template, redirect, url_for, flash, session, request, make_response
-from models import db, RSVP, Guest, generate_reservation_id
-from forms import RSVPForm, UpdateConfirmForm, PaymentStatusForm, GuestInfoForm, ReservationLookupForm
+from models import db, RSVP, Guest, SeatingPreference, generate_reservation_id
+from forms import RSVPForm, UpdateConfirmForm, PaymentStatusForm, GuestInfoForm, ReservationLookupForm, SeatingPreferenceForm
 import os
 import secrets
 from sqlalchemy import text
@@ -472,6 +472,79 @@ def add_guest():
     
     # Redirect to edit mode
     return redirect(url_for('guest_info', action='edit'))
+
+
+@app.route('/seating-preferences', methods=['GET', 'POST'])
+def seating_preferences():
+    """Seating preferences page for ranking other reservations."""
+    rsvp = get_rsvp_from_cookie()
+    
+    if not rsvp:
+        flash('Please look up your reservation first.', 'info')
+        return redirect(url_for('guest_info'))
+    
+    # Get all other RSVPs
+    other_rsvps = RSVP.query.filter(RSVP.id != rsvp.id).order_by(RSVP.name).all()
+    
+    if not other_rsvps:
+        flash('No other reservations to prefer.', 'info')
+        return redirect(url_for('guest_info'))
+    
+    # Get existing preferences or create new
+    preference = SeatingPreference.query.filter_by(rsvp_id=rsvp.id).first()
+    ranked_ids = preference.get_ranked_list() if preference else []
+    
+    if request.method == 'POST':
+        # Get ranked RSVP IDs from form
+        ranked_rsvp_ids = []
+        for i in range(len(other_rsvps)):
+            rsvp_id = request.form.get(f'rank_{i}')
+            if rsvp_id:
+                try:
+                    ranked_rsvp_ids.append(int(rsvp_id))
+                except (ValueError, TypeError):
+                    pass
+        
+        # Save or update preference
+        if not preference:
+            preference = SeatingPreference(rsvp_id=rsvp.id)
+            db.session.add(preference)
+        
+        preference.set_ranked_list(ranked_rsvp_ids)
+        db.session.commit()
+        flash('Seating preferences saved successfully!', 'success')
+        # Refresh the page to show updated state
+        return redirect(url_for('seating_preferences'))
+    
+    # Build list of other RSVPs with guest names for display, separated into ranked and unranked
+    ranked_rsvps_info = []
+    unranked_rsvps_info = []
+    
+    for other_rsvp in other_rsvps:
+        guests = Guest.query.filter_by(rsvp_id=other_rsvp.id).order_by(Guest.guest_number).all()
+        
+        # Display name: use guest names if available, otherwise fall back to RSVP name
+        if guests:
+            display_name = ' and '.join([f"{g.first_name} {g.last_name}" for g in guests])
+        else:
+            display_name = other_rsvp.name
+        
+        rsvp_info = {
+            'rsvp': other_rsvp,
+            'display_name': display_name,
+            'rank': ranked_ids.index(other_rsvp.id) + 1 if other_rsvp.id in ranked_ids else None
+        }
+        
+        if other_rsvp.id in ranked_ids:
+            ranked_rsvps_info.append(rsvp_info)
+        else:
+            unranked_rsvps_info.append(rsvp_info)
+    
+    # Sort ranked by their position in ranked_ids
+    ranked_rsvps_info.sort(key=lambda x: ranked_ids.index(x['rsvp'].id))
+    
+    form = SeatingPreferenceForm()
+    return render_template('seating_preferences.html', form=form, rsvp=rsvp, ranked_rsvps_info=ranked_rsvps_info, unranked_rsvps_info=unranked_rsvps_info, ranked_ids=ranked_ids)
 
 
 if __name__ == '__main__':
