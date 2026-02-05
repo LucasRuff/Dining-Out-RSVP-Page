@@ -167,10 +167,10 @@ A Flask-based web application for managing RSVPs and guest information for the E
 
 ## Cookie Management
 
-- **Cookie Name:** `rsvp_id`
+- **Cookie Name:** `rsvp_token`
 - **Expiration:** 1 year
 - **Usage:** Automatically recognizes returning users
-- **Storage:** Stores RSVP database ID (integer)
+- **Storage:** Stores an unguessable RSVP token for user identification
 
 ## Session Variables
 

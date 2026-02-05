@@ -30,6 +30,7 @@ class RSVP(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     reservation_id = db.Column(db.String(6), unique=True, nullable=False)
+    rsvp_token = db.Column(db.String(128), unique=True, nullable=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     num_guests = db.Column(db.Integer, nullable=False, default=1)

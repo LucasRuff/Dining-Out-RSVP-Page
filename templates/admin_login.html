@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<div class="event-info">
+    <h2>Admin Login</h2>
+    <p class="event-description">
+        Enter the admin password to access responses and payment tracking.
+    </p>
+</div>
+
+<div class="form-container" style="max-width: 400px;">
+    <form method="POST" novalidate>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

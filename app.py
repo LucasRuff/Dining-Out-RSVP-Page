@@ -3,6 +3,9 @@ from flask import Flask, render_template, redirect, url_for, flash, session, req
 from models import db, RSVP, Guest, generate_reservation_id
 from forms import RSVPForm, UpdateConfirmForm, PaymentStatusForm, GuestInfoForm, ReservationLookupForm
 import os
+import secrets
+from sqlalchemy import text
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -14,6 +17,15 @@ db.init_app(app)
 # Create tables on first request
 with app.app_context():
     db.create_all()
+    # Lightweight migration for RSVP token column
+    try:
+        columns = {row[1] for row in db.session.execute(text("PRAGMA table_info(rsvps)"))}
+        if 'rsvp_token' not in columns:
+            db.session.execute(text("ALTER TABLE rsvps ADD COLUMN rsvp_token VARCHAR(128)"))
+            db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_rsvps_rsvp_token ON rsvps (rsvp_token)"))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 @app.context_processor
@@ -24,25 +36,41 @@ def inject_rsvp():
 
 def get_rsvp_from_cookie():
     """Get RSVP record from cookie if it exists and is valid."""
-    rsvp_id = request.cookies.get('rsvp_id')
-    if rsvp_id:
-        try:
-            return RSVP.query.get(int(rsvp_id))
-        except (ValueError, TypeError):
-            return None
+    rsvp_token = request.cookies.get('rsvp_token')
+    if rsvp_token:
+        return RSVP.query.filter_by(rsvp_token=rsvp_token).first()
     return None
 
 
-def set_rsvp_cookie(response, rsvp_id):
-    """Set cookie with RSVP id."""
-    response.set_cookie('rsvp_id', str(rsvp_id), max_age=60*60*24*365)  # 1 year
+def ensure_rsvp_token(rsvp):
+    """Ensure RSVP has a unique, unguessable token."""
+    if not rsvp.rsvp_token:
+        rsvp.rsvp_token = secrets.token_urlsafe(32)
+        db.session.commit()
+    return rsvp.rsvp_token
+
+
+def set_rsvp_cookie(response, rsvp):
+    """Set cookie with RSVP token."""
+    token = ensure_rsvp_token(rsvp)
+    response.set_cookie('rsvp_token', token, max_age=60*60*24*365, httponly=True, samesite='Lax')
     return response
 
 
 def delete_rsvp_cookie(response):
     """Delete the RSVP cookie."""
-    response.delete_cookie('rsvp_id')
+    response.delete_cookie('rsvp_token')
     return response
+
+
+def require_admin(f):
+    """Decorator to require admin authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('admin_authenticated'):
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # Home page
@@ -104,7 +132,7 @@ def rsvp():
             session['show_reservation_id'] = existing_rsvp.reservation_id
             flash('Your RSVP has been updated successfully.', 'success')
             response = make_response(redirect(url_for('success')))
-            set_rsvp_cookie(response, existing_rsvp.id)
+            set_rsvp_cookie(response, existing_rsvp)
             return response
         
         # Check if email already exists (for new RSVPs)
@@ -129,7 +157,7 @@ def rsvp():
         flash('Thank you! Your RSVP has been submitted successfully.', 'success')
         session['show_reservation_id'] = new_rsvp.reservation_id
         response = make_response(redirect(url_for('success')))
-        set_rsvp_cookie(response, new_rsvp.id)
+        set_rsvp_cookie(response, new_rsvp)
         return response
     
     return render_template('index.html', form=form, action=action)
@@ -172,7 +200,7 @@ def confirm_update():
             session['show_reservation_id'] = existing_rsvp.reservation_id
             flash('Your RSVP has been updated successfully.', 'success')
             response = make_response(redirect(url_for('success')))
-            set_rsvp_cookie(response, existing_rsvp.id)
+            set_rsvp_cookie(response, existing_rsvp)
             return response
         
         elif form.cancel.data:
@@ -220,7 +248,7 @@ def remove_guest():
         
         session.pop('rsvp_id_for_removal', None)
         response = make_response(redirect(url_for('success')))
-        set_rsvp_cookie(response, rsvp.id)
+        set_rsvp_cookie(response, rsvp)
         return response
     
     return render_template('remove_guest.html', rsvp=rsvp, guests=guests)
@@ -238,7 +266,25 @@ def success():
     return render_template('success.html', reservation_id=reservation_id)
 
 
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page."""
+    if request.method == 'POST':
+        password = request.form.get('password')
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin')
+        
+        if admin_password and password == admin_password:
+            session['admin_authenticated'] = True
+            flash('Logged in successfully.', 'success')
+            return redirect(request.args.get('next') or url_for('responses'))
+        else:
+            flash('Incorrect password.', 'error')
+    
+    return render_template('admin_login.html')
+
+
 @app.route('/responses')
+@require_admin
 def responses():
     """View all current RSVP responses."""
     rsvps = RSVP.query.order_by(RSVP.created_at.desc()).all()
@@ -264,6 +310,7 @@ def mark_payment():
 
 
 @app.route('/payment-tracking', methods=['GET', 'POST'])
+@require_admin
 def payment_tracking():
     """Payment tracking page to update payment status for each RSVP."""
     rsvps = RSVP.query.order_by(RSVP.name).all()
@@ -321,7 +368,9 @@ def guest_info():
             if rsvp:
                 # Set a temporary session to allow guest info entry
                 session['guest_info_rsvp_id'] = rsvp.id
-                return redirect(url_for('guest_info'))
+                response = make_response(redirect(url_for('guest_info')))
+                set_rsvp_cookie(response, rsvp)
+                return response
             else:
                 flash('Reservation not found. Please check your Reservation ID or email.', 'error')
         
@@ -389,6 +438,13 @@ def guest_info():
         return redirect(url_for('guest_info'))
     
     return render_template('guest_info.html', form=form, rsvp=rsvp)
+
+
+@app.route('/guest-list')
+def guest_list():
+    """View all guests across all reservations."""
+    guests = Guest.query.order_by(Guest.rsvp_id, Guest.guest_number).all()
+    return render_template('guest_list.html', guests=guests)
 
 
 @app.route('/add-guest', methods=['POST'])

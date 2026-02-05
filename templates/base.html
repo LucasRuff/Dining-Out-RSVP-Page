@@ -18,6 +18,9 @@
                 {% if request.endpoint != 'menu' %}
                 <a href="{{ url_for('menu') }}" class="header-nav-btn">Dinner Menu</a>
                 {% endif %}
+                {% if request.endpoint != 'guest_list' %}
+                <a href="{{ url_for('guest_list') }}" class="header-nav-btn">Guest List</a>
+                {% endif %}
                 {% if current_rsvp %}
                     {% if request.endpoint != 'home' %}
                     <a href="{{ url_for('guest_info') }}" class="header-nav-btn">Guest Info</a>

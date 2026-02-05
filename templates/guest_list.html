@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Guest List - EECS Dining-Out{% endblock %}
+
+{% block content %}
+<style>
+    .guest-row-even { background: rgba(26, 26, 26, 0.8); }
+    .guest-row-odd { background: rgba(13, 13, 13, 0.8); }
+</style>
+<div class="event-info">
+    <h2>Guest List</h2>
+    <p class="event-description">
+        All guests across all reservations.
+    </p>
+</div>
+
+<div class="form-container">
+    {% if guests %}
+    <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+        <thead>
+            <tr style="background: #d4af37; color: #1a1a1a;">
+                <th style="padding: 0.75rem; text-align: left; border: 1px solid #999;">First Name</th>
+                <th style="padding: 0.75rem; text-align: left; border: 1px solid #999;">Last Name</th>
+                <th style="padding: 0.75rem; text-align: left; border: 1px solid #999;">Fun Fact</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for guest in guests %}
+            <tr style="color: #e8e8e8;" class="{% if loop.index % 2 == 0 %}guest-row-even{% else %}guest-row-odd{% endif %}">
+                <td style="padding: 0.75rem; border: 1px solid #4a4a4a;">{{ guest.first_name }}</td>
+                <td style="padding: 0.75rem; border: 1px solid #4a4a4a;">{{ guest.last_name }}</td>
+                <td style="padding: 0.75rem; border: 1px solid #4a4a4a;">
+                    {% if guest.fun_fact %}
+                    {{ guest.fun_fact }}
+                    {% else %}
+                    <em style="color: #999;">—</em>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p style="margin-top: 1rem; text-align: center; color: #999;">Total: {{ guests|length }} guests</p>
+    {% else %}
+    <p>No guests found.</p>
+    {% endif %}
+    
+    <div style="margin-top: 2rem; text-align: center;">
+        <a href="{{ url_for('home') }}" class="btn btn-secondary">Return to Home</a>
+    </div>
+</div>
+{% endblock %}
