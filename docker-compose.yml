@@ -1,15 +1,37 @@
+networks:
+  EECS_docker_web_network:
+    external: true
+    name: "EECS_docker_web_network"
 services:
-  web:
-    image: lucasruff/rsvp_system:latest  # Pull from Docker Hub
-    # Or use: build: .  # Build locally
-    ports:
-      - "8080:8080"
+  wpcedo:
+    command:
+      - "/bin/bash"
+    container_name: "wpcedo"
     environment:
-      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - "ADMIN_PASSWORD=eecs_dining_out"
+      - "SECRET_KEY=dev-secret-key-change-in-production"
+      - "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      - "LANG=C.UTF-8"
+      - "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305"
+      - "PYTHON_VERSION=3.12.12"
+      - "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4"
+      - "PYTHONDONTWRITEBYTECODE=1"
+      - "PYTHONUNBUFFERED=1"
+    hostname: "wpcedo.westpoint.edu"
+    image: "lucasruff/rsvp_system"
+    ipc: "private"
+    logging:
+      driver: "json-file"
+      options: {}
+    networks:
+      - "EECS_docker_web_network"
+    ports:
+      - "8080:8080/tcp"
+    restart: "unless-stopped"
+    stdin_open: true
+    tty: true
+    user: "appuser"
     volumes:
-      - rsvp_data:/app/instance
-    restart: unless-stopped
-
-volumes:
-  rsvp_data:
+      - "/opt/data/eecs_dining_out:/app/instance"
+    working_dir: "/app"
+version: "3.6"

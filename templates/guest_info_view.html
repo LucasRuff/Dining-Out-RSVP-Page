@@ -88,7 +88,7 @@
     
     {% if rsvp.payment_status in ['not paid', 'guests changed - not paid'] %}
     <p style="text-align: center;">Pay via cash or check to MAJ Geoff Moores, or Venmo @EECSFund using the QR code below:</p>
-    <img src="{{ url_for('static', filename='media/EECSFund_Venmo_QR.png') }}" alt="Venmo QR Code" class="payment-qr">
+    <img src="{{ '/edo' + url_for('static', filename='media/EECSFund_Venmo_QR.png') }}" alt="Venmo QR Code" class="payment-qr">
 
     <div class="payment-mark-buttons" style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center;">
         <form method="POST" action="{{ url_for('mark_payment') }}" style="display: inline;">
@@ -102,7 +102,7 @@
     </div>
     {% elif rsvp.payment_status.startswith('pending') %}
     <p style="color: #856404; font-weight: 600;">✓ Your payment has been marked as pending confirmation by MAJ Moores!</p>
-    <img src="{{ url_for('static', filename='media/special_QR_code.png') }}" alt="Venmo QR Code" class="payment-qr">
+    <img src="{{ '/edo' + url_for('static', filename='media/special_QR_code.png') }}" alt="Venmo QR Code" class="payment-qr">
     {% else %}
     <p style="color: #155724; font-weight: 600;">✓ Your payment has been confirmed!</p>
     {% endif %}

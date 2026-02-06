@@ -195,8 +195,16 @@ The application is containerized with Docker and includes:
 
 - Python 3.12 slim base image
 - Gunicorn WSGI server (port 8080)
-- SQLite database with volume persistence
+- SQLite database with volume persistence (stored at `instance/rsvp.db` relative to the app directory)
 - Non-root user for security
+
+### Reverse Proxy Path Prefix
+
+If the app is served under a path prefix (for example, `/edo`), configure the app to generate prefixed URLs.
+
+- **APP_PREFIX**: set to the desired prefix (default is `/edo`).
+- The app uses a small WSGI middleware that sets `SCRIPT_NAME` and strips the prefix from `PATH_INFO`.
+- This ensures all `url_for()` links (including static assets) include the prefix automatically.
 
 ### Docker Commands
 

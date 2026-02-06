@@ -10,10 +10,30 @@ from datetime import datetime
 from sqlalchemy import text
 from functools import wraps
 
+
+class PrefixMiddleware:
+    def __init__(self, app, prefix):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+        if self.prefix:
+            environ['SCRIPT_NAME'] = self.prefix
+            path_info = environ.get('PATH_INFO', '')
+            if path_info.startswith(self.prefix):
+                environ['PATH_INFO'] = path_info[len(self.prefix):] or '/'
+        return self.app(environ, start_response)
+
+
 app = Flask(__name__)
+basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///rsvp.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'instance', 'rsvp.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app_prefix = os.environ.get('APP_PREFIX', '/edo').rstrip('/')
+if app_prefix:
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, app_prefix)
 
 db.init_app(app)
 

@@ -198,6 +198,18 @@ body {
     flex-direction: column;
 }
 
+.menu-list {
+    margin: 1rem 0 2rem 0;
+    padding: 0;
+    list-style: none;
+    color: #e8e8e8;
+    text-align: center;
+}
+
+.menu-list li {
+    margin: 0.35rem 0;
+}
+
 .container-wide {
     max-width: 1400px;
 }
